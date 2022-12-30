@@ -3,9 +3,19 @@ import { Comment } from "./Comment";
 import styles from "./Post.module.css";
 
 import { format, formatDistanceToNow } from "date-fns";
-import ptBr from "date-fns/locale/pt-BR"
+import ptBr from "date-fns/locale/pt-BR";
+
+import { useState } from "react";
+
+//estado = variáveis que eu quero que o componente monitore.
 
 export function Post ({author, publishedAt, content}) {
+
+    const [comments, setComments] = useState([
+        "Post muito bacana, hein!?",
+    ]);
+
+    const [newCommentText, setNewCommentText] = useState("");
 
     const publishedDateFormatted = format(publishedAt, "d 'de' LLLL 'às' HH:mm'h'", {
         
@@ -18,7 +28,46 @@ export function Post ({author, publishedAt, content}) {
         locale: ptBr,
         addSuffix: true
 
-    })
+    });
+
+    function handleCreateNewComment () {
+
+        event.preventDefault();
+
+        //Imutabilidade
+        setComments([...comments, newCommentText]);
+        setNewCommentText("");
+
+    }
+
+    function handleNewCommentChange () {
+
+        event.target.setCustomValidity("");
+        setNewCommentText(event.target.value);
+
+    }
+
+    function handleNewCommentInvalid () {
+
+        event.target.setCustomValidity("Esse campo é obrigatório");
+
+    }
+
+    function deleteComment (commentToDelete) {
+
+        //Imutabilidade -> as variáveis não sofrem mutação, nós criamos um novo valor (um novo espaço na memória)
+
+        const commentsWithoutDeletedOne = comments.filter(comment => {
+
+            return comment !== commentToDelete;
+
+        });
+
+        setComments(commentsWithoutDeletedOne);
+
+    }
+
+    const isNewCommentEmpty = newCommentText.length === 0;
 
     return (
 
@@ -53,11 +102,11 @@ export function Post ({author, publishedAt, content}) {
 
                         if (line.type === "paragraph") {
 
-                            return <p>{line.content}</p>;
+                            return <p key={line.content}>{line.content}</p>;
 
                         } else if (line.type === "link"){
 
-                            return <p><a href="#">{line.content}</a></p>
+                            return <p key={line.content}><a href="#">{line.content}</a></p>
 
                         }
 
@@ -67,15 +116,24 @@ export function Post ({author, publishedAt, content}) {
 
             </div>
 
-            <form className={styles.commentForm}>
+            <form onSubmit={handleCreateNewComment} className={styles.commentForm}>
 
                 <strong>Deixe seu feedback</strong>
 
-                <textarea placeholder="Deixe um comentário"/>
+                <textarea 
+                    name="comment" 
+                    placeholder="Deixe um comentário"
+                    value={newCommentText}
+                    onChange={handleNewCommentChange}
+                    onInvalid={handleNewCommentInvalid}
+                    required
+                />
 
                 <footer>
 
-                    <button type="submit">Publicar</button>
+                    <button type="submit" disabled={isNewCommentEmpty}>
+                        Publicar
+                    </button>
 
                 </footer>
 
@@ -83,7 +141,21 @@ export function Post ({author, publishedAt, content}) {
 
             <div className={styles.commentList}>
 
-                <Comment />
+                {
+
+                    comments.map(comment => {
+
+                        return (
+                            <Comment 
+                                key={comment}
+                                content={comment} 
+                                onDeleteComment={deleteComment}
+                            />
+                        )
+
+                    })
+
+                }
 
             </div>
 
